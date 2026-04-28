@@ -1,5 +1,7 @@
 # caddy
 
+[![Build and Publish Docker Image](https://github.com/zhengqunkoo/caddy/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/zhengqunkoo/caddy/actions/workflows/docker-publish.yml)
+
 Custom [Caddy](https://caddyserver.com/) Docker image built with [xcaddy](https://github.com/caddyserver/xcaddy), bundling the following plugins:
 
 - [caddy-dns/cloudflare](https://github.com/caddy-dns/cloudflare) – Cloudflare DNS provider for ACME DNS challenges
@@ -12,7 +14,15 @@ Custom [Caddy](https://caddyserver.com/) Docker image built with [xcaddy](https:
 
 No docker-compose file is provided in this repository.
 
-## Build
+## Pull pre-built image
+
+The image is published to the GitHub Container Registry on every push to `main`:
+
+```sh
+docker pull ghcr.io/zhengqunkoo/caddy:latest
+```
+
+## Build locally
 
 ```sh
 docker build -t caddy-custom .
@@ -26,7 +36,7 @@ docker run -d \
   -p 8443:8443 \
   -v /path/to/Caddyfile:/etc/caddy/Caddyfile:ro \
   -v caddy_data:/data \
-  caddy-custom
+  ghcr.io/zhengqunkoo/caddy:latest
 ```
 
 The container runs as UID/GID `65534` (nobody) for reduced privileges.
