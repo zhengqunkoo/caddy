@@ -1,6 +1,8 @@
 name: Build and Publish Docker Image
 
 on:
+  schedule:
+    - cron: '0 16 * * *'  # 12am GMT+8 (midnight UTC+8 = 16:00 UTC)
   push:
     branches:
       - main
@@ -48,11 +50,63 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (push and pull_request events)
+        if: github.event_name != 'schedule'
         uses: docker/build-push-action@v6
         with:
           context: .
           push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Docker image locally (scheduled event)
+        id: build_scheduled
+        if: github.event_name == 'schedule'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:candidate
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Check if artifact changed (scheduled event)
+        id: artifact_check
+        if: github.event_name == 'schedule'
+        run: |
+          cid=$(docker create "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:candidate")
+          docker cp "$cid:/bin/caddy" /tmp/new-caddy
+          docker rm "$cid"
+          NEW_HASH=$(sha256sum /tmp/new-caddy | cut -d' ' -f1)
+          echo "New caddy hash: $NEW_HASH"
+
+          CHANGED=true
+          if docker pull "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" 2>/dev/null; then
+            cid=$(docker create "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest")
+            docker cp "$cid:/bin/caddy" /tmp/old-caddy
+            docker rm "$cid"
+            OLD_HASH=$(sha256sum /tmp/old-caddy | cut -d' ' -f1)
+            echo "Old caddy hash: $OLD_HASH"
+            if [ "$NEW_HASH" = "$OLD_HASH" ]; then
+              echo "Artifact unchanged, skipping publish"
+              CHANGED=false
+            fi
+          else
+            echo "No existing image found, will publish"
+          fi
+
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+
+      - name: Push Docker image if artifact changed (scheduled event)
+        if: github.event_name == 'schedule' && steps.artifact_check.outputs.changed == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
