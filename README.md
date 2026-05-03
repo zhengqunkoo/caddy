@@ -11,6 +11,9 @@ Custom [Caddy](https://caddyserver.com/) Docker image built with [xcaddy](https:
   - `modules/l4tls` – TLS matcher for layer 4
   - `modules/l4ssh` – SSH matcher for layer 4
   - `modules/l4proxy` – proxy handler for layer 4
+  - `modules/crowdsec/http` – CrowdSec IP address filtering for malicious users
+  - `modules/crowdsec/layer4` – CrowdSec for layer 4
+  - `modules/crowdsec/appsec` – CrowdSec AppSec for layer 7 applications
 
 No docker-compose file is provided in this repository.
 
