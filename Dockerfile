@@ -12,7 +12,7 @@ RUN xcaddy build \
     --with github.com/hslatman/caddy-crowdsec-bouncer/http \
     --with github.com/hslatman/caddy-crowdsec-bouncer/layer4 \
     --with github.com/hslatman/caddy-crowdsec-bouncer/appsec \
-    --with github.com/caddy-plugins/nobots
+    --with github.com/mkalus/caddy_nobots_v2
 
 FROM alpine
 LABEL maintainer="Zhengqun Koo <root@zhengqunkoo.com>"
